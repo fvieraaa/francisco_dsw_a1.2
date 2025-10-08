@@ -1,12 +1,12 @@
 <?php
-// Versión 3 - Validaciones mediante funciones
+// Versión 4 - Temas relacionados (checkbox múltiple)
 
 // No permitir acceso directo sin enviar el formulario
 if ($_SERVER["REQUEST_METHOD"] != "POST") {
   die("Acceso no permitido");
 }
 
-//funciones de validacion
+// funciones de validacion
 
 function validarCorreo($correo) {
   if (!filter_var($correo, FILTER_VALIDATE_EMAIL)) {
@@ -40,17 +40,24 @@ function validarDescripcion($descripcion) {
   return true;
 }
 
-// recogemos los datos del fomulario
+//función para validar los temas
+function validarTemas($temas) {
+  if (count($temas) < 1 || count($temas) > 3) {
+    return "Debes seleccionar entre 1 y 3 temas relacionados.";
+  }
+  return true;
+}
+
+//recogemos los datos del formulario
 $correo = $_POST["correo"];
 $modulo = $_POST["modulo"];
 $asunto = $_POST["asunto"];
 $descripcion = $_POST["descripcion"];
+$temas = isset($_POST["temas"]) ? $_POST["temas"] : [];
 
 $errores = [];
 
 // valido con funciones
-
-
 $resultado = validarCorreo($correo);
 if ($resultado !== true) $errores[] = $resultado;
 
@@ -63,8 +70,11 @@ if ($resultado !== true) $errores[] = $resultado;
 $resultado = validarDescripcion($descripcion);
 if ($resultado !== true) $errores[] = $resultado;
 
-//enseñar los errores
+// validacion temas de v4
+$resultado = validarTemas($temas);
+if ($resultado !== true) $errores[] = $resultado;
 
+// enseñar los errores
 if (count($errores) > 0) {
   echo "<h2>Se han encontrado errores:</h2>";
   echo "<ul>";
@@ -76,9 +86,10 @@ if (count($errores) > 0) {
   exit();
 }
 
+// convertir los temas a una cadena de texto
+$temas_str = implode(",", $temas);
 
 // guardo en dudas.csv
-
 $ruta = "data/dudas.csv";
 
 // crear carpeta si no existe
@@ -88,15 +99,15 @@ if (!file_exists("data")) {
 
 // crear archivo con cabecera si no existe
 if (!file_exists($ruta)) {
-  $cabecera = "\"correo\";\"módulo\";\"asunto\";\"descripción\"\n";
+  $cabecera = "\"correo\";\"módulo\";\"asunto\";\"descripción\";\"temas\"\n";
   file_put_contents($ruta, $cabecera);
 }
 
 // añadir los datos
-$linea = "\"$correo\";\"$modulo\";\"$asunto\";\"$descripcion\"\n";
+$linea = "\"$correo\";\"$modulo\";\"$asunto\";\"$descripcion\";\"$temas_str\"\n";
 file_put_contents($ruta, $linea, FILE_APPEND);
 
-//confirmación
+// confirmación
 echo "<h2>Duda registrada correctamente</h2>";
 echo "<p>Gracias por enviar tu duda, $correo.</p>";
 echo "<a href='formulario.php'>Enviar otra duda</a>";
