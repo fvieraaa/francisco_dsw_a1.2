@@ -1,15 +1,13 @@
 <?php
-// Versión 5 - Refactorización y seguridad
-
 // Desactivar avisos o warnings en pantalla
 error_reporting(0);
 
-// Evitar acceso directo sin POST o GET
+// evita acceso directo sin POST o GET
 if ($_SERVER["REQUEST_METHOD"] !== "POST" && $_SERVER["REQUEST_METHOD"] !== "GET") {
   exit("Acceso no permitido");
 }
 
-// Incluimos las funciones externas
+// incluir las funciones de validación
 require_once "includes/validaciones.php";
 
 // Recogemos los datos (protegiendo contra XSS)
@@ -22,27 +20,16 @@ $temas = isset($_POST["temas"]) ? $_POST["temas"] : ($_GET["temas"] ?? []);
 // Validaciones
 $errores = [];
 
-$resultado = validarCorreo($correo);
-if ($resultado !== true) $errores[] = $resultado;
-
-$resultado = validarModulo($modulo);
-if ($resultado !== true) $errores[] = $resultado;
-
-$resultado = validarAsunto($asunto);
-if ($resultado !== true) $errores[] = $resultado;
-
-$resultado = validarDescripcion($descripcion);
-if ($resultado !== true) $errores[] = $resultado;
-
-$resultado = validarTemas($temas);
-if ($resultado !== true) $errores[] = $resultado;
+$resultado = validarCorreo($correo); if ($resultado !== true) $errores[] = $resultado;
+$resultado = validarModulo($modulo); if ($resultado !== true) $errores[] = $resultado;
+$resultado = validarAsunto($asunto); if ($resultado !== true) $errores[] = $resultado;
+$resultado = validarDescripcion($descripcion); if ($resultado !== true) $errores[] = $resultado;
+$resultado = validarTemas($temas); if ($resultado !== true) $errores[] = $resultado;
 
 // Mostrar errores si los hay
 if (count($errores) > 0) {
   echo "<h2>Se han encontrado errores:</h2><ul>";
-  foreach ($errores as $error) {
-    echo "<li>$error</li>";
-  }
+  foreach ($errores as $error) echo "<li>$error</li>";
   echo "</ul><a href='formulario.php'>Volver al formulario</a>";
   exit();
 }
