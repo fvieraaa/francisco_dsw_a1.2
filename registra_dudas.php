@@ -1,63 +1,27 @@
 <?php
-// Versión 4 - Temas relacionados (checkbox múltiple)
+// Versión 5 - Refactorización y seguridad
 
-// No permitir acceso directo sin enviar el formulario
-if ($_SERVER["REQUEST_METHOD"] != "POST") {
-  die("Acceso no permitido");
+// Desactivar avisos o warnings en pantalla
+error_reporting(0);
+
+// Evitar acceso directo sin POST o GET
+if ($_SERVER["REQUEST_METHOD"] !== "POST" && $_SERVER["REQUEST_METHOD"] !== "GET") {
+  exit("Acceso no permitido");
 }
 
-// funciones de validacion
+// Incluimos las funciones externas
+require_once "includes/validaciones.php";
 
-function validarCorreo($correo) {
-  if (!filter_var($correo, FILTER_VALIDATE_EMAIL)) {
-    return "El correo no tiene un formato válido.";
-  }
-  return true;
-}
+// Recogemos los datos (protegiendo contra XSS)
+$correo = htmlspecialchars($_POST["correo"] ?? $_GET["correo"] ?? "");
+$modulo = htmlspecialchars($_POST["modulo"] ?? $_GET["modulo"] ?? "");
+$asunto = htmlspecialchars($_POST["asunto"] ?? $_GET["asunto"] ?? "");
+$descripcion = htmlspecialchars($_POST["descripcion"] ?? $_GET["descripcion"] ?? "");
+$temas = isset($_POST["temas"]) ? $_POST["temas"] : ($_GET["temas"] ?? []);
 
-function validarModulo($modulo) {
-  $modulos_validos = ["DPL", "SOJ", "DOR", "DEW", "IPW", "DSW", "Opcional"];
-  if (!in_array($modulo, $modulos_validos)) {
-    return "El módulo no es válido.";
-  }
-  return true;
-}
-
-function validarAsunto($asunto) {
-  if (strlen($asunto) > 50) {
-    return "El asunto no puede tener más de 50 caracteres.";
-  }
-  if (is_numeric($asunto)) {
-    return "El asunto no puede ser solo un número.";
-  }
-  return true;
-}
-
-function validarDescripcion($descripcion) {
-  if (strlen($descripcion) > 300) {
-    return "La descripción no puede tener más de 300 caracteres.";
-  }
-  return true;
-}
-
-//función para validar los temas
-function validarTemas($temas) {
-  if (count($temas) < 1 || count($temas) > 3) {
-    return "Debes seleccionar entre 1 y 3 temas relacionados.";
-  }
-  return true;
-}
-
-//recogemos los datos del formulario
-$correo = $_POST["correo"];
-$modulo = $_POST["modulo"];
-$asunto = $_POST["asunto"];
-$descripcion = $_POST["descripcion"];
-$temas = isset($_POST["temas"]) ? $_POST["temas"] : [];
-
+// Validaciones
 $errores = [];
 
-// valido con funciones
 $resultado = validarCorreo($correo);
 if ($resultado !== true) $errores[] = $resultado;
 
@@ -70,44 +34,32 @@ if ($resultado !== true) $errores[] = $resultado;
 $resultado = validarDescripcion($descripcion);
 if ($resultado !== true) $errores[] = $resultado;
 
-// validacion temas de v4
 $resultado = validarTemas($temas);
 if ($resultado !== true) $errores[] = $resultado;
 
-// enseñar los errores
+// Mostrar errores si los hay
 if (count($errores) > 0) {
-  echo "<h2>Se han encontrado errores:</h2>";
-  echo "<ul>";
+  echo "<h2>Se han encontrado errores:</h2><ul>";
   foreach ($errores as $error) {
     echo "<li>$error</li>";
   }
-  echo "</ul>";
-  echo "<a href='formulario.php'>Volver al formulario</a>";
+  echo "</ul><a href='formulario.php'>Volver al formulario</a>";
   exit();
 }
 
-// convertir los temas a una cadena de texto
-$temas_str = implode(",", $temas);
-
-// guardo en dudas.csv
+// Guardar en CSV
 $ruta = "data/dudas.csv";
-
-// crear carpeta si no existe
-if (!file_exists("data")) {
-  mkdir("data");
-}
-
-// crear archivo con cabecera si no existe
+if (!file_exists("data")) mkdir("data");
 if (!file_exists($ruta)) {
   $cabecera = "\"correo\";\"módulo\";\"asunto\";\"descripción\";\"temas\"\n";
   file_put_contents($ruta, $cabecera);
 }
 
-// añadir los datos
+$temas_str = implode(",", $temas);
 $linea = "\"$correo\";\"$modulo\";\"$asunto\";\"$descripcion\";\"$temas_str\"\n";
 file_put_contents($ruta, $linea, FILE_APPEND);
 
-// confirmación
+// Confirmación
 echo "<h2>Duda registrada correctamente</h2>";
 echo "<p>Gracias por enviar tu duda, $correo.</p>";
 echo "<a href='formulario.php'>Enviar otra duda</a>";
